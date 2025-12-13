@@ -49,17 +49,17 @@ Core infrastructure that everything else depends on. All code goes in `crewai/`.
 - [x] Append entries to `commands.log` (ISO timestamp, agent, dir, status, command, result)
 - [x] Write `failure_summary.md` on failure (stage, last command, traceback, next steps)
 
-### 1.2 SafeShellTool (`crewai/tools/safe_shell.py`)
+### 1.2 SafeShellTool (`crewai/tools/safe_shell.py`) ✅
 
-- [ ] Implement using CrewAI's `@tool` decorator
-- [ ] Parse commands with `shlex.split`
-- [ ] Reject chaining metacharacters: `;`, `&&`, `||`, `|`, `>`, `<`, `` ` ``, `$(`
-- [ ] Allowlist executables: `git`, `python`, `pytest`, `ls`, `cat`
-- [ ] Allowlist git subcommands: `status`, `diff`, `log`, `add`, `commit`, `fetch`, `pull`, `push`, `checkout`, `merge`
-- [ ] Denylist tokens: `rm`, `mv`, `chmod`, `chown`, `sudo`, `rebase`, `reset`, `clean`, `-f` flags
-- [ ] Enforce one command per call
-- [ ] Integrate with RunLogger for audit logging
-- [ ] Return command output or rejection message
+- [x] Implement using CrewAI's `@tool` decorator
+- [x] Parse commands with `shlex.split`
+- [x] Reject chaining metacharacters: `;`, `&&`, `||`, `|`, `>`, `<`, `` ` ``, `$(`
+- [x] Allowlist executables: `git`, `python`, `pytest`, `ls`, `cat`
+- [x] Allowlist git subcommands: `status`, `diff`, `log`, `add`, `commit`, `fetch`, `pull`, `push`, `checkout`, `merge`
+- [x] Denylist tokens: `rm`, `mv`, `chmod`, `chown`, `sudo`, `rebase`, `reset`, `clean`, `-f` flags
+- [x] Enforce one command per call
+- [x] Integrate with RunLogger for audit logging
+- [x] Return command output or rejection message
 
 ### 1.3 FileWriteTool (`crewai/tools/file_write.py`)
 
