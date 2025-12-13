@@ -18,22 +18,22 @@ The workflow is **collaborative and iterative**: agents communicate, provide fee
 
 Initial scaffolding before any implementation.
 
-### 0.1 Package Structure
+### 0.1 Package Structure ✅
 
-- [ ] Create `pyproject.toml` with dependencies (crewai, pydantic, openai, pytest)
-- [ ] Create `crewai/__init__.py`
-- [ ] Create `crewai/tools/__init__.py`
-- [ ] Create `src/.gitkeep` (placeholder for project code)
-- [ ] Create `tests/.gitkeep` (placeholder for tests)
-- [ ] Create `scripts/.gitkeep` (placeholder for helper scripts)
+- [x] Create `pyproject.toml` with dependencies (crewai, pydantic, openai, pytest)
+- [x] Create `crewai/__init__.py`
+- [x] Create `crewai/tools/__init__.py`
+- [x] Create `src/.gitkeep` (placeholder for project code)
+- [x] Create `tests/.gitkeep` (placeholder for tests)
+- [x] Create `scripts/.gitkeep` (placeholder for helper scripts)
 
-### 0.2 Git Worktree Setup Script
+### 0.2 Git Worktree Setup Script ✅
 
-- [ ] Create `scripts/setup_worktrees.sh`
-- [ ] Create branches: `feature/dev-task`, `feature/arch-review`, `feature/qa-test`
-- [ ] Create worktrees as siblings: `../developer-agent-work`, `../architect-agent-work`, `../qa-agent-work`
-- [ ] Validate setup succeeded
-- [ ] Document usage in README
+- [x] Create `scripts/setup_worktrees.sh`
+- [x] Create branches: `feature/dev-task`, `feature/arch-review`, `feature/qa-test`
+- [x] Create worktrees as siblings: `../developer-agent-work`, `../architect-agent-work`, `../qa-agent-work`
+- [x] Validate setup succeeded
+- [x] Document usage in README
 
 ---
 
@@ -41,13 +41,13 @@ Initial scaffolding before any implementation.
 
 Core infrastructure that everything else depends on. All code goes in `crewai/`.
 
-### 1.1 RunLogger (`crewai/run_logger.py`)
+### 1.1 RunLogger (`crewai/run_logger.py`) ✅
 
-- [ ] Create run directory at `.runs/<run_id>/`
-- [ ] Generate `config.json` with spec, model, branches, timestamps
-- [ ] Write `preflight.md` with check results
-- [ ] Append entries to `commands.log` (ISO timestamp, agent, dir, status, command, result)
-- [ ] Write `failure_summary.md` on failure (stage, last command, traceback, next steps)
+- [x] Create run directory at `.runs/<run_id>/`
+- [x] Generate `config.json` with spec, model, branches, timestamps
+- [x] Write `preflight.md` with check results
+- [x] Append entries to `commands.log` (ISO timestamp, agent, dir, status, command, result)
+- [x] Write `failure_summary.md` on failure (stage, last command, traceback, next steps)
 
 ### 1.2 SafeShellTool (`crewai/tools/safe_shell.py`)
 
