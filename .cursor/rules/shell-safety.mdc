@@ -1,0 +1,11 @@
+---
+description: Shell command safety policy for assistants.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Shell Safety Policy
+
+- One command per line (no chaining).
+- Do not use destructive commands (`rm`, `mv`, `chmod`, `sudo`, etc.).
+- Do not use risky git operations (`reset --hard`, `clean`, `rebase`, `push --force`).

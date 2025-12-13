@@ -1,0 +1,13 @@
+---
+description: Python conventions for this workspace.
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Python Conventions
+
+- Target Python >= 3.10.
+- Use type hints for public functions and key data structures.
+- Prefer small functions with explicit inputs/outputs.
+- Errors must be actionable (include what failed and how to fix).
+- Avoid cleverness: clarity > brevity.
