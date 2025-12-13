@@ -6,15 +6,28 @@ alwaysApply: true
 
 # Workspace Rules (Design Repo)
 
+## Git Workflow (Required)
+
+For every task:
+1. Create GitHub issue if it doesn't exist
+2. Create branch from `main`: `feature/<issue>-<desc>` or `defect/<issue>-<desc>`
+3. Checkout the branch
+4. Implement with tests
+5. Commit and push
+6. Open a PR to merge into `main`
+
 ## Safety
+
 - Never suggest or run destructive commands (`rm`, `mv`, `chmod`, `sudo`, etc.).
 - Never use risky git operations (`reset --hard`, `clean`, `rebase`, `push --force`).
 - Never chain terminal commands (`&&`, `;`, pipes, redirects, subshells).
 
 ## Secrets & External Effects
+
 - Do not place secrets in files or commits. Use env vars.
 - Do not create/modify external resources (GitHub, cloud, billing) unless explicitly asked.
 
 ## Delivery
+
 - Prefer small changes, with tests where relevant.
 - Update docs for major decisions.

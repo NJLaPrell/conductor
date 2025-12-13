@@ -15,7 +15,27 @@ These rules govern how assistants should work in this workspace (Cursor / VS Cod
 - No secrets: don’t paste API keys or tokens into files, logs, or commits. Use env vars.
 - No external side effects unless explicitly requested (no creating GitHub repos/issues/PRs, billing changes, etc.).
 
-## Workflow Expectations
+## Git Workflow (Required)
+
+For every task:
+
+1. **Create issue** — If a GitHub issue doesn't exist for the task, create one
+2. **Create branch** — Branch from `main` using naming convention:
+   - Features: `feature/<issue-number>-<short-description>`
+   - Defects: `defect/<issue-number>-<short-description>`
+3. **Checkout branch** — Switch to the new branch locally
+4. **Implement** — Complete the task with tests
+5. **Commit & push** — Commit changes and push to the branch
+6. **Open PR** — Create a pull request to merge into `main`
+
+Example:
+```
+feature/2-safe-shell-tool
+defect/15-fix-path-validation
+```
+
+## Development Expectations
+
 - Work in small steps. After each step:
   - explain what changed
   - how to run it
