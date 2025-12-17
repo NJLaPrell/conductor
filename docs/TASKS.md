@@ -1,322 +1,370 @@
-# Tasks: Autonomous Multi-Agent Dev Pipeline
+# Conductor: Tasks
 
 ## Project Summary
 
-Build a CLI-driven autonomous dev pipeline using CrewAI and git worktrees. Three AI agents collaborate in isolated worktrees:
+Build an MCP server that guides developers through a structured workflow (Developer → Architect Review → QA Validation) while maintaining full Cursor IDE integration.
 
-- **Developer** — implements features, addresses feedback, merges code
-- **Architect** — reviews code, provides direction (read-only)
-- **QA** — validates code, runs tests, reports issues (read-only)
-
-The workflow is **collaborative and iterative**: agents communicate, provide feedback, and loop until quality standards are met.
-
-**Target:** Python ≥3.10, CrewAI, OpenAI API
+**Target:** Python ≥3.10, MCP SDK, Cursor IDE
 
 ---
 
-## Phase 0: Project Setup
+## Milestones
 
-Initial scaffolding before any implementation.
+| Milestone | Description | Phases | Status |
+|-----------|-------------|--------|--------|
+| **M0: Clean Slate** | Project restructured for MCP approach | Phase 0 | 🔲 Not Started |
+| **M1: Hello MCP** | Cursor can connect to server and see tools | Phase 1 | 🔲 Not Started |
+| **M2: Workflow Works** | All workflow tools functional, state persists | Phase 2 | 🔲 Not Started |
+| **M3: Context-Aware** | Prompts include codebase context and rules | Phase 3 | 🔲 Not Started |
+| **M4: Production Ready** | Tested, documented, error handling complete | Phases 4-6 | 🔲 Not Started |
 
-### 0.1 Package Structure ✅
+### Milestone Criteria
 
-- [x] Create `pyproject.toml` with dependencies (crewai, pydantic, openai, pytest)
-- [x] Create `crewai/__init__.py`
-- [x] Create `crewai/tools/__init__.py`
-- [x] Create `src/.gitkeep` (placeholder for project code)
-- [x] Create `tests/.gitkeep` (placeholder for tests)
-- [x] Create `scripts/.gitkeep` (placeholder for helper scripts)
+**M0: Clean Slate**
+- [ ] `workflow/` directory exists with `__init__.py`
+- [ ] `pyproject.toml` updated (no CrewAI dependency)
+- [ ] Clean install works in fresh venv
 
-### 0.2 Git Worktree Setup Script ✅
+**M1: Hello MCP**
+- [ ] MCP server starts without errors
+- [ ] Cursor connects and lists tools
+- [ ] `workflow_status` returns "no active workflow"
+- [ ] State model defined and serializes correctly
 
-- [x] Create `scripts/setup_worktrees.sh`
-- [x] Create branches: `feature/dev-task`, `feature/arch-review`, `feature/qa-test`
-- [x] Create worktrees as siblings: `../developer-agent-work`, `../architect-agent-work`, `../qa-agent-work`
-- [x] Validate setup succeeded
-- [x] Document usage in README
+**M2: Workflow Works**
+- [ ] Can start a task and get developer prompt
+- [ ] Can transition through all phases
+- [ ] State persists to `.workflow/` directory
+- [ ] Invalid transitions return clear errors
 
----
+**M3: Context-Aware**
+- [ ] Developer prompt includes file tree summary
+- [ ] Developer prompt includes workspace rules (AGENTS.md)
+- [ ] Prompts render correctly with placeholders filled
 
-## Phase 1: Foundation (RunLogger + Tools)
-
-Core infrastructure that everything else depends on. All code goes in `crewai/`.
-
-### 1.1 RunLogger (`crewai/run_logger.py`) ✅
-
-- [x] Create run directory at `.runs/<run_id>/`
-- [x] Generate `config.json` with spec, model, branches, timestamps
-- [x] Write `preflight.md` with check results
-- [x] Append entries to `commands.log` (ISO timestamp, agent, dir, status, command, result)
-- [x] Write `failure_summary.md` on failure (stage, last command, traceback, next steps)
-
-### 1.2 SafeShellTool (`crewai/tools/safe_shell.py`) ✅
-
-- [x] Implement using CrewAI's `@tool` decorator
-- [x] Parse commands with `shlex.split`
-- [x] Reject chaining metacharacters: `;`, `&&`, `||`, `|`, `>`, `<`, `` ` ``, `$(`
-- [x] Allowlist executables: `git`, `python`, `pytest`, `ls`, `cat`
-- [x] Allowlist git subcommands: `status`, `diff`, `log`, `add`, `commit`, `fetch`, `pull`, `push`, `checkout`, `merge`
-- [x] Denylist tokens: `rm`, `mv`, `chmod`, `chown`, `sudo`, `rebase`, `reset`, `clean`, `-f` flags
-- [x] Enforce one command per call
-- [x] Integrate with RunLogger for audit logging
-- [x] Return command output or rejection message
-
-### 1.3 FileWriteTool (`crewai/tools/file_write.py`)
-
-- [ ] Implement using CrewAI's `@tool` decorator
-- [ ] Accept `path` and `content` parameters
-- [ ] Validate path is within agent's worktree boundary
-- [ ] Create parent directories if needed
-- [ ] Write file content
-- [ ] Log action to commands.log
-
-### 1.4 FileReadTool (`crewai/tools/file_read.py`)
-
-- [ ] Implement using CrewAI's `@tool` decorator
-- [ ] Accept `path` parameter
-- [ ] Validate path is within agent's worktree boundary
-- [ ] Return file contents as string
-- [ ] Handle file-not-found gracefully
-- [ ] Log action to commands.log
-
-### 1.5 Tool Factory (`crewai/tools/factory.py`)
-
-- [ ] Implement `create_tools(worktree_path, run_logger, agent_name, role)` function
-- [ ] Role parameter: `"developer"`, `"architect"`, or `"qa"`
-- [ ] Return list of tools bound to specific worktree
-- [ ] Path validation uses `Path.is_relative_to()` (Python 3.9+)
-- [ ] Role-based permissions:
-  - Developer: read_file, write_file, safe_shell (full git)
-  - Architect: read_file, safe_shell (read-only git)
-  - QA: read_file, safe_shell (read-only git)
-- [ ] Each agent gets its own tool instances
+**M4: Production Ready**
+- [ ] Unit tests pass for state and transitions
+- [ ] Integration test completes full workflow cycle
+- [ ] Manual Cursor test documented and passing
+- [ ] Error messages are actionable
+- [ ] README installation steps verified
 
 ---
 
-## Phase 2: Preflight & Validation
+## Current Status
 
-Fail-fast checks before any agent runs.
+**Active Milestone:** M0: Clean Slate
 
-### 2.1 Environment Checks
+**Blockers:** None
 
-- [ ] Verify `OPENAI_API_KEY` is set
-- [ ] Verify model name present (env or CLI, default `gpt-4o`)
-- [ ] Check Python version ≥3.10
-- [ ] Check test runner available (`python -m pytest`)
-
-### 2.2 Worktree Validation
-
-- [ ] Verify `../developer-agent-work` exists
-- [ ] Verify `../architect-agent-work` exists
-- [ ] Verify `../qa-agent-work` exists
-
-### 2.3 Branch Verification
-
-- [ ] Check each worktree is on expected branch
-- [ ] Auto-checkout to correct branch if wrong (MVP default)
-- [ ] Fail if checkout fails
-- [ ] Optionally fast-forward branches from `main` if `--fast-forward` flag set (default OFF)
-
-### 2.4 Clean State Checks
-
-- [ ] Run `git status --porcelain` on each worktree
-- [ ] Fail with instructions if dirty
-
-### 2.5 Remote Checks (Optional)
-
-- [ ] Warn if `origin` remote missing
-- [ ] Allow local-only mode
-
-### 2.6 Preflight Output
-
-- [ ] Write all results to `.runs/<run_id>/preflight.md`
-- [ ] Exit with code `3` on any failure
+**Next Action:** Create `workflow/` directory structure
 
 ---
 
-## Phase 3: CrewAI & Agents
+## Phase 0: Project Restructure
 
-Agent definitions, prompts, and LLM integration.
+*Milestone: M0 — Clean Slate*
 
-### 3.1 LLM Configuration
+Clean up from previous CrewAI approach and set up new structure.
 
-CrewAI handles LLM config natively — no custom provider needed.
+### 0.1 Directory Restructure
 
-- [ ] Configure agents to use model from env/CLI (default `gpt-4o`)
-- [ ] Support per-agent model override if needed (e.g., `o1-preview` for Architect)
-- [ ] Support temperature override via env var
+- [ ] Create `workflow/` directory for MCP server code
+- [ ] Create `workflow/__init__.py`
+- [ ] Create `workflow/prompts/` directory
+- [ ] Create `.workflow/.gitkeep` for state directory
+- [ ] Decide: keep or remove `crewai/` directory (some code may be reusable)
 
-### 3.2 Developer Agent (writes code, merges)
+### 0.2 Dependencies Update
 
-- [ ] Define role: "You are the ONLY agent that can write code and merge"
-- [ ] Define capabilities: read, write, commit, push, merge
-- [ ] Task: read repo, implement code in `src/`, add tests in `tests/`
-- [ ] Task: run tests locally until pass
-- [ ] Task: commit and push to `feature/dev-task`
-- [ ] Task: request review from Architect
-- [ ] Task: refine based on Architect feedback (loop)
-- [ ] Task: merge to QA branch when approved
-- [ ] Task: fix issues reported by QA (loop)
-- [ ] Output: `dev_output.md` summary
-
-### 3.3 Architect Agent (review only, no code)
-
-- [ ] Define role: "You REVIEW code but do NOT write code"
-- [ ] Define capabilities: read files, view diffs (read-only)
-- [ ] Define restrictions: cannot write, commit, push, merge
-- [ ] Task: fetch/checkout developer's branch
-- [ ] Task: review diff for quality, architecture, safety
-- [ ] Task: provide specific feedback with file/line references
-- [ ] Task: approve only when quality bar is met
-- [ ] Output: `Approval` pydantic model (`approved`, `feedback`, `issues[]`)
-- [ ] Output: `review_output.json`
-
-### 3.4 QA Agent (validation only, no code)
-
-- [ ] Define role: "You VALIDATE code but do NOT write code"
-- [ ] Define capabilities: read files, run tests (read-only)
-- [ ] Define restrictions: cannot write, commit, push, merge
-- [ ] Task: pull latest merged code
-- [ ] Task: run test suite
-- [ ] Task: examine code for logical issues and potential breakage
-- [ ] Task: report specific issues with file/line references
-- [ ] Output: `QAResult` pydantic model (`tests_passed`, `test_summary`, `logical_issues[]`, `recommendations[]`)
-- [ ] Output: `qa_output.json`, `pytest_output.txt`
-
-### 3.5 Tool Binding (role-based)
-
-- [ ] Use tool factory to create tools per agent with role parameter
-- [ ] Developer: gets read_file, write_file, safe_shell (full git)
-- [ ] Architect: gets read_file, safe_shell (read-only git)
-- [ ] QA: gets read_file, safe_shell (read-only git)
-- [ ] Ensure each agent can only access its own worktree
+- [x] Update `pyproject.toml`:
+  - Remove `crewai` dependency
+  - Add `mcp` (MCP Python SDK)
+  - Keep `pydantic` for state models
+  - Keep `pytest` for testing
+- [ ] Test clean install in fresh venv
 
 ---
 
-## Phase 4: Orchestrator
+## Phase 1: Core MCP Server
 
-CLI entry point and two-phase execution logic.
+*Milestone: M1 — Hello MCP*
 
-### 4.1 CLI Parsing (`crewai/orchestrator.py`)
+Minimal MCP server that Cursor can connect to.
 
-- [ ] `--spec` (required): feature specification text
-- [ ] `--run-id`: default `auto` (timestamp-based)
-- [ ] `--model`: default from env or `gpt-4o`
-- [ ] `--test-cmd`: default `python -m pytest`
-- [ ] `--local-only`: toggle remote push requirement
-- [ ] `--verbose`: toggle extra logging
-- [ ] `--force`: override advisory lock if present
-- [ ] `--fast-forward`: optional fast-forward branches from `main` before run (default OFF)
+### 1.1 Server Skeleton (`workflow/server.py`)
 
-### 4.2 Run Initialization
+- [ ] Implement MCP server using `mcp` SDK
+- [ ] Register as stdio transport (Cursor default)
+- [ ] Add basic health check / list tools
+- [ ] Test: Cursor can connect and see tools
 
-- [ ] Generate run ID
-- [ ] Initialize RunLogger
-- [ ] Write initial `config.json`
+### 1.2 State Management (`workflow/state.py`)
 
-### 4.3 Preflight Execution
+- [ ] Define `WorkflowState` pydantic model:
+  - task_id, spec, phase, iteration
+  - created_at, updated_at
+  - history (list of transitions)
+  - feedback (accumulated review feedback)
+  - files_changed
+- [ ] Implement `load_state(task_id)` → WorkflowState
+- [ ] Implement `save_state(state)` → writes to `.workflow/<task_id>/state.json`
+- [ ] Implement `get_active_task()` → current task_id or None
+- [ ] Handle state file corruption gracefully
 
-- [ ] Run all preflight checks
-- [ ] Exit `3` on failure
+### 1.3 Phase Enum & Transitions
 
-### 4.4 Implementation Phase (Dev ↔ Architect collaboration)
-
-- [ ] Run Developer task: implement feature spec
-- [ ] Developer requests review from Architect
-- [ ] Architect reviews and provides feedback
-- [ ] Loop: Developer refines → Architect re-reviews (max 3 iterations)
-- [ ] Parse `Approval` from Architect output
-- [ ] If max iterations without approval: write `failure_summary.md`, exit `2`
-- [ ] Developer merges to QA branch
-- [ ] Capture `dev_output.md`, `review_output.json`
-
-### 4.5 Validation Phase (QA ↔ Developer collaboration)
-
-- [ ] Run QA task: run tests + examine code
-- [ ] QA reports issues
-- [ ] Loop: Developer fixes → QA re-validates (max 2 iterations)
-- [ ] If max iterations without passing: write `failure_summary.md`, exit `4`
-- [ ] Capture `qa_output.json`, `pytest_output.txt`
-- [ ] If all passing: exit `0`
-
-### 4.6 Finalization
-
-- [ ] Update `config.json` with final SHAs (per branch at start/end), result, exit code
-- [ ] Clean up any advisory lock file
-
-### 4.7 Advisory Lock (Optional)
-
-- [ ] Create `.crew-lock` at start
-- [ ] Refuse to run if lock exists (unless `--force`)
-- [ ] Delete lock at end or on exception
+- [ ] Define `Phase` enum: `implementation`, `review`, `qa`, `complete`, `abandoned`
+- [ ] Define valid transitions:
+  - `implementation` → `review` (via request_review)
+  - `review` → `implementation` (via request_changes)
+  - `review` → `qa` (via approve)
+  - `qa` → `implementation` (via report_issues)
+  - `qa` → `complete` (via pass_qa)
+  - any → `abandoned` (via abandon_task)
+- [ ] Implement `transition(from_phase, to_phase)` with validation
 
 ---
 
-## Phase 5: Testing & Validation
+## Phase 2: Workflow Tools
 
-Prove the system works and is safe.
+*Milestone: M2 — Workflow Works*
 
-### 5.1 SafeShellTool Unit Tests
+The MCP tools that drive the workflow.
 
-- [ ] Test: rejects `;` chaining
-- [ ] Test: rejects `&&` chaining
-- [ ] Test: rejects `|` piping
-- [ ] Test: rejects `rm`, `mv`, `sudo`
-- [ ] Test: rejects `git reset`, `git clean`
-- [ ] Test: allows `git status`, `git diff`, `git add`, `git commit`
-- [ ] Test: allows `python -m pytest`
-- [ ] Test: logs all commands to audit log
+### 2.1 `start_task` Tool
 
-### 5.2 FileWriteTool Unit Tests
+- [ ] Create new workflow state
+- [ ] Generate task_id (timestamp-based if not provided)
+- [ ] Set phase to `implementation`
+- [ ] Load and return developer prompt with:
+  - Task spec
+  - Codebase summary (placeholder for now)
+  - Workspace rules (placeholder for now)
+- [ ] Log to history
 
-- [ ] Test: writes file within worktree
-- [ ] Test: creates parent directories
-- [ ] Test: rejects path outside worktree
-- [ ] Test: rejects absolute paths outside worktree
-- [ ] Test: rejects path traversal (`../`)
-- [ ] Test: logs all writes to audit log
+### 2.2 `request_review` Tool
 
-### 5.3 FileReadTool Unit Tests
+- [ ] Validate current phase is `implementation`
+- [ ] Transition to `review` phase
+- [ ] Store summary and files_changed
+- [ ] Return architect prompt with:
+  - Implementation summary
+  - Files to review
+  - Previous feedback (if iteration > 1)
+- [ ] Log to history
 
-- [ ] Test: reads file within worktree
-- [ ] Test: returns file contents as string
-- [ ] Test: rejects path outside worktree
-- [ ] Test: rejects path traversal (`../`)
-- [ ] Test: handles file-not-found gracefully
-- [ ] Test: logs all reads to audit log
+### 2.3 `approve` Tool
 
-### 5.4 Preflight Unit Tests
+- [ ] Validate current phase is `review`
+- [ ] Transition to `qa` phase
+- [ ] Return QA prompt
+- [ ] Log to history
 
-- [ ] Test: detects missing worktree directory
-- [ ] Test: detects wrong branch, auto-checkouts
-- [ ] Test: detects dirty worktree
-- [ ] Test: passes when all conditions met
+### 2.4 `request_changes` Tool
 
-### 5.5 Smoke Test
+- [ ] Validate current phase is `review`
+- [ ] Transition back to `implementation`
+- [ ] Increment iteration counter
+- [ ] Accumulate feedback
+- [ ] Return developer prompt with feedback context
+- [ ] Log to history
+- [ ] Warn if iteration > MAX_ITERATIONS
 
-- [ ] Script: `scripts/smoke_test_pipeline.py`
-- [ ] Create temp repo with worktrees
-- [ ] Run orchestrator on trivial spec (e.g., "add date util function")
-- [ ] Assert exit code `0`
-- [ ] Assert all required artifacts exist
-- [ ] Assert tests pass in QA
+### 2.5 `report_issues` Tool
 
-### 5.6 Integration Validation
+- [ ] Validate current phase is `qa`
+- [ ] Transition back to `implementation`
+- [ ] Increment iteration counter
+- [ ] Accumulate QA feedback
+- [ ] Return developer prompt with QA feedback
+- [ ] Log to history
 
-- [ ] Run full pipeline on real-ish spec
-- [ ] Verify rejection flow (Architect rejects → exit `2`, no QA)
-- [ ] Verify test failure flow (approved but tests fail → exit `4`)
-- [ ] Verify artifact completeness
+### 2.6 `pass_qa` Tool
+
+- [ ] Validate current phase is `qa`
+- [ ] Transition to `complete`
+- [ ] Generate completion summary:
+  - Total iterations
+  - Files changed
+  - Timeline
+- [ ] Log to history
+
+### 2.7 `workflow_status` Tool
+
+- [ ] Return current state:
+  - Phase
+  - Iteration count
+  - Pending feedback summary
+  - Files changed
+- [ ] Handle "no active workflow" case
+
+### 2.8 `abandon_task` Tool
+
+- [ ] Set phase to `abandoned`
+- [ ] Log reason
+- [ ] Return confirmation
 
 ---
 
-## Milestone: MVP Complete
+## Phase 3: Context & Prompts
 
-When all phases are done:
+*Milestone: M3 — Context-Aware*
 
-1. ✅ Preflight blocks misconfigurations with clear errors
-2. ✅ SafeShellTool blocks chaining/injection and logs everything
-3. ✅ Architect approval gates QA phase
-4. ✅ Every run produces `.runs/<run_id>/` with all artifacts
-5. ✅ Smoke test passes end-to-end
+Make agents codebase-aware.
 
+### 3.1 Codebase Summary (`workflow/context.py`)
+
+- [ ] Implement `get_file_tree(root)` → formatted tree string
+- [ ] Implement `get_module_summaries(root)` → docstrings from Python files
+- [ ] Implement `get_codebase_summary(root)` → combined context
+- [ ] Respect `.gitignore` patterns
+- [ ] Truncate to reasonable size (~2000 tokens)
+
+### 3.2 Rules Loader
+
+- [ ] Implement `load_workspace_rules(root)`:
+  - Read `AGENTS.md`
+  - Read `.cursor/rules/*.mdc` and `.cursor/rules/*.md`
+  - Read `.github/copilot-instructions.md`
+- [ ] Combine into single rules string
+- [ ] Handle missing files gracefully
+
+### 3.3 Role Prompts
+
+- [ ] Create `workflow/prompts/developer.md`:
+  - Role description
+  - Capabilities
+  - Workflow instructions
+  - Placeholders for: {spec}, {feedback}, {codebase_summary}, {rules}
+- [ ] Create `workflow/prompts/architect.md`:
+  - Role description
+  - Review checklist
+  - Actions (approve/request_changes)
+  - Placeholders for: {summary}, {files_changed}, {diff_hint}
+- [ ] Create `workflow/prompts/qa.md`:
+  - Role description
+  - Validation steps
+  - Actions (pass/report_issues)
+  - Placeholders for: {summary}, {files_changed}
+
+### 3.4 Prompt Rendering
+
+- [ ] Implement `render_prompt(role, context)` → formatted prompt string
+- [ ] Load template from prompts directory
+- [ ] Fill in placeholders from context dict
+
+---
+
+## Phase 4: Cursor Integration
+
+*Milestone: M4 — Production Ready (part 1)*
+
+Make it work in Cursor.
+
+### 4.1 MCP Configuration
+
+- [ ] Create example `.cursor/mcp.json` for local config
+- [ ] Document global config option
+- [ ] Test: Cursor connects to server on startup
+
+### 4.2 Tool Registration
+
+- [ ] Ensure all tools appear in Cursor's tool list
+- [ ] Verify tool descriptions are clear
+- [ ] Test: Can invoke tools from chat
+
+### 4.3 Error Handling
+
+- [ ] Return clear error messages for invalid transitions
+- [ ] Handle "no active workflow" gracefully
+- [ ] Log errors for debugging
+
+---
+
+## Phase 5: Testing
+
+*Milestone: M4 — Production Ready (part 2)*
+
+Prove it works.
+
+### 5.1 Unit Tests
+
+- [ ] Test state load/save
+- [ ] Test phase transitions (valid and invalid)
+- [ ] Test codebase summary generation
+- [ ] Test rules loading
+- [ ] Test prompt rendering
+
+### 5.2 Integration Test
+
+- [ ] Script that simulates full workflow:
+  - start_task → request_review → request_changes → request_review → approve → pass_qa
+- [ ] Verify state file at each step
+- [ ] Verify history is complete
+
+### 5.3 Manual Cursor Test
+
+- [ ] Connect MCP server in Cursor
+- [ ] Run through complete workflow manually
+- [ ] Verify prompts appear correctly
+- [ ] Document any issues
+
+---
+
+## Phase 6: Polish
+
+*Milestone: M4 — Production Ready (part 3)*
+
+Nice-to-haves for MVP.
+
+### 6.1 Workflow History
+
+- [ ] Write human-readable `history.md` alongside `state.json`
+- [ ] Include timestamps, summaries, feedback
+- [ ] Useful for post-mortem review
+
+### 6.2 Iteration Warnings
+
+- [ ] Warn when iteration > 3
+- [ ] Suggest breaking task into smaller pieces
+- [ ] Don't block, just advise
+
+### 6.3 Cleanup Command
+
+- [ ] Add `cleanup_old_workflows` tool or script
+- [ ] Remove `.workflow/<task_id>/` older than N days
+- [ ] Keep completed workflows for reference
+
+---
+
+## Deprecated: Previous CrewAI Implementation
+
+The following from the original design are **no longer applicable**:
+
+- ~~SafeShellTool~~ — Cursor has its own shell tool
+- ~~FileWriteTool / FileReadTool~~ — Cursor handles this natively
+- ~~Tool Factory~~ — Not needed with MCP approach
+- ~~Preflight checks~~ — Not needed (Cursor manages env)
+- ~~CrewAI agents~~ — Replaced by role prompts
+- ~~Orchestrator CLI~~ — Replaced by MCP tools
+- ~~Git worktrees setup~~ — Not needed (single workspace)
+
+**Code to evaluate for reuse:**
+- `crewai/run_logger.py` — Logging concepts may apply to workflow history
+- `crewai/tools/safe_shell.py` — Safety patterns could inform prompt guidelines
+
+---
+
+## Summary: Task Count by Phase
+
+| Phase | Tasks | Completed |
+|-------|-------|-----------|
+| Phase 0: Project Restructure | 6 | 1 |
+| Phase 1: Core MCP Server | 12 | 0 |
+| Phase 2: Workflow Tools | 24 | 0 |
+| Phase 3: Context & Prompts | 13 | 0 |
+| Phase 4: Cursor Integration | 7 | 0 |
+| Phase 5: Testing | 9 | 0 |
+| Phase 6: Polish | 6 | 0 |
+| **Total** | **77** | **1** |

@@ -1,14 +1,55 @@
-# crewDev
+# Conductor
 
-A CLI-driven autonomous software development pipeline using **CrewAI** and **git worktrees**.
+An **MCP workflow server** that guides developers through a structured development process (Developer → Architect Review → QA Validation) while maintaining full **Cursor IDE integration**.
 
-Three AI agents (Developer → Architect → QA) work in isolated worktrees with restricted tool access, producing auditable artifacts for every run.
+## What Is This?
 
-## Quick Start
+Instead of building a separate autonomous agent pipeline, Conductor provides an MCP server that works *inside* Cursor. You get:
 
-### 1. Create and activate a venv
+- **Structured workflow** — enforced phases with clear handoffs
+- **Role-based prompts** — Developer, Architect, and QA perspectives
+- **Full Cursor integration** — diffs, semantic search, all native tools
+- **Human-in-the-loop** — you drive, the workflow guides
+
+## Quick Example
+
+```
+You: @workflow start_task "Add a date utility that returns ISO format"
+
+Agent: [Developer mode]
+I'll implement this feature. Let me first check the existing codebase...
+[implements code, writes tests]
+@workflow request_review --summary "Added src/date_utils.py" --files "src/date_utils.py,tests/test_date_utils.py"
+
+Agent: [Architect mode] 
+Reviewing the changes...
+The implementation looks good, but needs timezone support.
+@workflow request_changes --feedback "Add timezone parameter" --issues "Missing TZ support"
+
+Agent: [Developer mode]
+Addressing feedback...
+[updates implementation]
+@workflow request_review --summary "Added timezone support"
+
+Agent: [Architect mode]
+LGTM!
+@workflow approve
+
+Agent: [QA mode]
+Running tests... All pass.
+Checking for edge cases... Looks solid.
+@workflow pass_qa --summary "All tests pass, no issues found"
+
+Agent: ✅ Workflow complete! Task finished in 3 iterations.
+```
+
+## Installation
+
+### 1. Clone and set up environment
 
 ```bash
+git clone <repo-url> conductor
+cd conductor
 python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
 ```
@@ -20,56 +61,61 @@ pip install -U pip
 pip install -e ".[dev]"
 ```
 
-### 3. Set up git worktrees
+### 3. Configure Cursor MCP
 
-```bash
-chmod +x scripts/setup_worktrees.sh
-./scripts/setup_worktrees.sh
+Add to your Cursor MCP config (`.cursor/mcp.json` or global settings):
+
+```json
+{
+  "mcpServers": {
+    "conductor": {
+      "command": "python",
+      "args": ["-m", "workflow.server"],
+      "cwd": "/path/to/conductor"
+    }
+  }
+}
 ```
 
-### 4. Set environment variables
+### 4. Restart Cursor
 
-```bash
-export OPENAI_API_KEY="your-api-key"
-export OPENAI_MODEL="gpt-4o"  # optional, defaults to gpt-4o
-```
+The workflow tools should now appear in your tool list.
 
-### 5. Run the pipeline
+## Workflow Tools
 
-```bash
-python -m crewai.orchestrator --spec "Add feature X ..."
-```
+| Tool | Description |
+|------|-------------|
+| `start_task` | Begin a new development task |
+| `request_review` | Developer requests architecture review |
+| `approve` | Architect approves changes |
+| `request_changes` | Architect requests changes |
+| `report_issues` | QA reports validation issues |
+| `pass_qa` | QA validation passed |
+| `workflow_status` | Check current workflow state |
+| `abandon_task` | Cancel current workflow |
 
 ## Project Structure
 
 ```
-crewDev/                        # Main repo (this workspace)
-├── crewai/                     # AI orchestration code
-│   ├── orchestrator.py         # CLI entry point
-│   ├── crew_config.py          # Agent/task definitions
-│   ├── preflight.py            # Pre-run validation
-│   ├── tools/                  # CrewAI tools
-│   │   ├── safe_shell.py       # Restricted shell access
-│   │   ├── file_write.py       # File writing
-│   │   └── file_read.py        # File reading
-│   ├── models.py               # Pydantic models
-│   └── run_logger.py           # Logging/artifacts
-├── src/                        # Project source code (agents work here)
-├── tests/                      # Project tests (QA runs these)
-├── scripts/                    # Helper scripts
-├── docs/                       # Design documentation
-│   ├── DESIGN.md               # Technical design spec
+conductor/
+├── workflow/                   # MCP workflow server
+│   ├── server.py               # MCP server entry point
+│   ├── tools.py                # Workflow tool definitions
+│   ├── state.py                # State management
+│   ├── context.py              # Codebase context generation
+│   └── prompts/                # Role-specific prompts
+│       ├── developer.md
+│       ├── architect.md
+│       └── qa.md
+├── src/                        # Your project source code
+├── tests/                      # Your project tests
+├── docs/                       # Documentation
+│   ├── DESIGN.md               # Technical design
 │   ├── TASKS.md                # Implementation tasks
 │   └── decisions.md            # Architecture decisions
-└── .runs/                      # Run artifacts (created per-run)
-```
-
-### Sibling Worktrees (created by setup script)
-
-```
-../developer-agent-work/        # Developer agent → feature/dev-task
-../architect-agent-work/        # Architect agent → feature/arch-review
-../qa-agent-work/               # QA agent → feature/qa-test
+├── .workflow/                  # Workflow state (auto-created)
+├── pyproject.toml
+└── README.md
 ```
 
 ## Documentation
@@ -77,30 +123,39 @@ crewDev/                        # Main repo (this workspace)
 - **[DESIGN.md](docs/DESIGN.md)** — Full technical design and architecture
 - **[TASKS.md](docs/TASKS.md)** — Implementation task breakdown
 - **[decisions.md](docs/decisions.md)** — Architecture decision records
-- **[AGENTS.md](AGENTS.md)** — Workspace operating rules for AI assistants
+- **[AGENTS.md](AGENTS.md)** — Workspace rules for AI assistants
 
-## CLI Options
+## How It Works
 
-```bash
-python -m crewai.orchestrator \
-  --spec "Add feature X ..."    # Feature specification (required)
-  --run-id auto                 # Run ID (default: timestamp)
-  --model gpt-4o                # LLM model (default: gpt-4o)
-  --test-cmd "python -m pytest" # Test command (default)
-  --local-only                  # Skip remote push
-  --verbose                     # Extra logging
-  --force                       # Override advisory lock
-  --fast-forward                # Fast-forward branches from main
-```
+1. **You start a task** — MCP server creates workflow state, returns Developer prompt
+2. **Agent works as Developer** — implements code using Cursor's native tools
+3. **Agent requests review** — MCP switches to Architect prompt
+4. **Agent reviews as Architect** — provides feedback or approves
+5. **Loop until approved** — Developer addresses feedback, re-requests review
+6. **QA validation** — Agent runs tests, checks for issues
+7. **Complete** — workflow finishes, state saved for reference
 
-## Exit Codes
+The MCP server tracks state, enforces transitions, and provides role-appropriate prompts. Cursor's agent does the actual work.
 
-| Code | Meaning |
-|------|---------|
-| `0` | SUCCESS — approved and tests passed |
-| `2` | REJECTED — architect did not approve |
-| `3` | INFRA FAIL — preflight or tool failure |
-| `4` | TESTS FAIL — approved but QA tests failed |
+## Why MCP Instead of Autonomous Agents?
+
+We originally designed a CrewAI-based autonomous pipeline. We pivoted to MCP because:
+
+| Autonomous Pipeline | MCP Workflow |
+|--------------------|--------------|
+| CLI-only, no IDE | Full Cursor integration |
+| Separate git worktrees | Single workspace |
+| Fully autonomous | Human-in-the-loop |
+| Complex infrastructure | ~200 lines of Python |
+
+See [decisions.md](docs/decisions.md) for the full rationale.
+
+## Limitations
+
+- **Cursor-only** — requires Cursor IDE with MCP support
+- **Self-review** — same model reviews its own work (mitigated by structured prompts)
+- **Advisory** — workflow is guided, not strictly enforced
+- **No CI mode** — can't run headless
 
 ## Development
 
@@ -110,4 +165,12 @@ Run tests:
 python -m pytest
 ```
 
-See `docs/TASKS.md` for the implementation roadmap.
+Run MCP server manually (for debugging):
+
+```bash
+python -m workflow.server
+```
+
+## Status
+
+🚧 **In Development** — See [TASKS.md](docs/TASKS.md) for current progress.

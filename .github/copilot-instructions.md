@@ -1,6 +1,6 @@
 # Copilot Instructions (Workspace)
 
-You are helping implement a design/prototype repo for an autonomous multi-agent pipeline.
+You are helping build **Conductor**, an MCP workflow server that integrates with Cursor IDE.
 
 ## Git Workflow (Required)
 

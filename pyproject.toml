@@ -1,13 +1,12 @@
 [project]
-name = "crewDev"
+name = "conductor"
 version = "0.1.0"
-description = "Autonomous multi-agent dev pipeline using CrewAI and git worktrees"
+description = "MCP workflow server for structured development in Cursor IDE"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "crewai>=0.80.0",
+    "mcp>=1.0.0",
     "pydantic>=2.0.0",
-    "openai>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -22,11 +21,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["crewai*"]
+include = ["workflow*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
-
